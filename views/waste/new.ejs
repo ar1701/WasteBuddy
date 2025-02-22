@@ -1,0 +1,119 @@
+<%- include("../partials/header") %>
+<%- include("../partials/navbar") %>
+
+<style>
+  form {
+      color: black;
+      
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    flex: 1;
+}
+
+footer {
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    background-color: #343a40; /* Dark background */
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+}
+
+ 
+  .spinner {
+      display: none;
+      width: 3rem;
+      height: 3rem;
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #28a745;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+  }
+  @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+  }
+</style>
+
+<div class="container mt-5 mb-5">
+  <h2 class="text-center">Add Waste Post</h2>
+  <form action="/waste" method="POST" enctype="multipart/form-data" class="shadow p-4 rounded bg-light mb-5" id="wasteForm">
+    <div class="mb-3 ">
+      <label class="form-label">Waste Name</label>
+      <input type="text" name="name" class="form-control" required>
+    </div>
+
+    <div class="mb-5">
+      <label class="form-label">Category</label>
+      <select name="category" class="form-select" required>
+        <option value="">Select a category</option>
+        <option value="Plastic">Plastic</option>
+        <option value="Paper">Paper</option>
+        <option value="Metal">Metal</option>
+        <option value="Glass">Glass</option>
+        <option value="Organic">Organic</option>
+        <option value="E-waste">E-waste</option>
+        <option value="Textile">Textile</option>
+        <option value="Expired Food">Expired Food</option>
+        <option value="Others">Others</option>
+      </select>
+
+    <div class="mb-3 mt-3">
+      <label class="form-label">Quantity (kg)</label>
+      <input type="number" name="quantity" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">City</label>
+      <input type="text" name="city" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Sector No</label>
+      <input type="text" name="sector" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Upload Image</label>
+      <input type="file" name="image" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-success " id="submitBtn">Post Waste</button>
+    <div class="spinner" id="loadingSpinner"></div>
+  </form>
+</div>
+
+<footer class="bg-dark text-white text-center py-3 mt-auto">
+  <p class="mb-0">© 2025 Eco Waste Management. All rights reserved.</p>
+</footer>
+
+
+<script>
+  document.getElementById("wasteForm").addEventListener("submit", function(event) {
+      const submitBtn = document.getElementById("submitBtn");
+      const spinner = document.getElementById("loadingSpinner");
+
+      // Show spinner and disable submit button
+      spinner.style.display = "block";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Uploading...";
+
+      // Simulate file upload delay (for demo purposes)
+      setTimeout(() => {
+          spinner.style.display = "none";
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Post Waste";
+          alert("Post successfully uploaded!");
+      }, 3000); // Replace with actual server response handling
+  });
+</script>
+
+
