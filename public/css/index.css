@@ -1,0 +1,63 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f9f1;
+}
+
+/* Hero Section */
+.hero {
+    background: url('/images/four.jpeg') center center/contain;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: bolder;
+    color: rgb(24, 66, 54);
+}
+
+/* Carousel */
+.carousel-item {
+    padding: 30px;
+    background: #d4edda;
+    border-radius: 10px;
+}
+.carousel h3 {
+    font-size: 1.5rem;
+    color: #155724;
+}
+
+/* Impact Counters */
+h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #28a745;
+}
+
+/* Challenges */
+.challenge-img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+.challenge-img:hover {
+    transform: scale(1.1);
+}
+
+.logo{
+    width: 60px;
+    height: 55px;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    margin-right: 10px;
+}
+.logo:hover {
+    transform: scale(1.1);
+}
+
+/* Footer */
+.footer {
+    background-color: #2e7d32;
+    color: white;
+    padding: 15px 0;
+}
