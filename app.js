@@ -49,3 +49,44 @@ app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/views"));
+
+
+
+
+app.get('/messages/:userId/:otherUserId', async (req, res) => {
+  try {
+    const messages = await Message.find({
+      $or: [
+        { sender: req.params.userId, receiver: req.params.otherUserId },
+        { sender: req.params.otherUserId, receiver: req.params.userId }
+      ]
+    }).sort('createdAt');
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching messages' });
+  }
+});
+
+app.post("/login", async (req, res, next) => {
+  passport.authenticate("user-local", async (err, user, info) => {
+    if (err) return next(err);
+    if (!user) {
+      return passport.authenticate("admin-local", (err, admin, info) => {
+        if (err) return next(err);
+        if (!admin) {
+          return res.redirect("/login");
+        }
+        req.logIn(admin, (err) => {
+          if (err) return next(err);
+          return res.redirect("/admin");
+        });
+      })(req, res, next);
+    }
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      return res.redirect("/index");
+    });
+  })(req, res, next);
+});
+
+
