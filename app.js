@@ -1,42 +1,80 @@
 if (process.env.NODE_ENV !== "production") {
-    require("dotenv").config();
-  }
-  const http = require('http');
-  const express = require("express");
-  const Message = require('./model/Message');
-  const socketIO = require('socket.io');
-  const mongoose = require("mongoose");
-  const path = require("path");
-  const axios = require("axios");
-  const methodOverride = require("method-override");
-  const ejsMate = require("ejs-mate");
-  const multer = require("multer");
-  const session = require("express-session");
-  const calculatePoints = require("./calculatePoint.js");
-  const bodyParser = require("body-parser");
-  const cors = require("cors");
-  const MongoStore = require("connect-mongo");
-  const passport = require("passport");
-  const LocalStrategy = require("passport-local");
-  const fs = require("fs");
-  const User = require("./model/user");
-  const Admin = require("./model/admin");
-  const { GoogleGenerativeAI } = require("@google/generative-ai");
-  const { GoogleAIFileManager } = require("@google/generative-ai/server");
-  const { isLoggedIn } = require("./middleware.js");
-  const PORT = process.env.PORT;
-  const apiKey = process.env.API_KEY;
-  const app = express();
-  const dbUrl = process.env.ATLASDB_URL;
-  const genAI = new GoogleGenerativeAI("apiKey");
-  app.locals.AppName = "WMS";
-  const fileManager = new GoogleAIFileManager(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const { generateResponse } = require("./test");
-  const { storage1, cloudinary } = require("./cloudConfig");
-  const Waste = require("./model/waste");
-  const upload1 = multer({ storage: storage1 });
-  
+  require("dotenv").config();
+}
+const http = require('http');
+const express = require("express");
+const Message = require('./model/Message');
+const socketIO = require('socket.io');
+const mongoose = require("mongoose");
+const path = require("path");
+const axios = require("axios");
+const methodOverride = require("method-override");
+const ejsMate = require("ejs-mate");
+const multer = require("multer");
+const session = require("express-session");
+const calculatePoints = require("./calculatePoint.js");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const MongoStore = require("connect-mongo");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const fs = require("fs");
+const User = require("./model/user");
+const Admin = require("./model/admin");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleAIFileManager } = require("@google/generative-ai/server");
+const { isLoggedIn } = require("./middleware.js");
+const PORT = process.env.PORT;
+const apiKey = process.env.API_KEY;
+const app = express();
+const dbUrl = process.env.ATLASDB_URL;
+const genAI = new GoogleGenerativeAI("apiKey");
+app.locals.AppName = "WMS";
+const fileManager = new GoogleAIFileManager(apiKey);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const { generateResponse } = require("./test");
+const { storage1, cloudinary } = require("./cloudConfig");
+const Waste = require("./model/waste");
+const upload1 = multer({ storage: storage1 });
+
+// Configure storage for uploaded files
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({ storage });
+
+// Configure session store
+const store = MongoStore.create({
+  mongoUrl: dbUrl,
+  crypto: { secret: process.env.SECRET },
+  touchAfter: 24 * 60 * 60,
+});
+store.on("error", (error) => {
+  console.error("Error in MONGO SESSION STORE:", error);
+});
+
+// Session options
+const sessionOptions = {
+  store,
+  secret: process.env.SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+  },
+};
+
+const server = http.createServer(app);
+const io = socketIO(server);
+const userSockets = new Map();
+
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json());
@@ -50,8 +88,130 @@ app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/views"));
 
+// Passport setup
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Configure Passport to use different strategies for User and Admin
+passport.use("user-local", new LocalStrategy(User.authenticate()));
+passport.use("admin-local", new LocalStrategy(Admin.authenticate()));
+
+passport.serializeUser((user, done) => {
+  done(null, { id: user.id, type: user.constructor.modelName });
+});
+
+passport.deserializeUser(async (obj, done) => {
+  try {
+    if (obj.type === "User") {
+      const user = await User.findById(obj.id);
+      done(null, user);
+    } else if (obj.type === "Admin") {
+      const admin = await Admin.findById(obj.id);
+      done(null, admin);
+    }
+  } catch (err) {
+    done(err);
+  }
+});
+
+// Middleware to make user data available in templates
+app.use((req, res, next) => {
+  res.locals.user = req.user; // `user` will now be available in all EJS templates
+  next();
+});
+
+// Connect to the database
+async function connectDB() {
+  try {
+    await mongoose.connect(dbUrl, {});
+    console.log("Database connection successful");
+  } catch (error) {
+    console.error("Database connection error:", error);
+    process.exit(1);
+  }
+}
+
+connectDB();
+
+// Error handling utility
+function asyncHandler(fn) {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
 
 
+
+app.get('/socket.io/socket.io.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
+});
+// Utility for file to generative part
+function fileToGenerativePart(path, mimeType) {
+  return {
+    inlineData: {
+      data: Buffer.from(fs.readFileSync(path)).toString("base64"),
+      mimeType,
+    },
+  };
+}
+
+io.on('connection', (socket) => {
+  socket.on('register', (data) => {
+    userSockets.set(data.userId, socket.id);
+  });
+  
+  socket.on('private message', async (data) => {
+    const receiverSocket = userSockets.get(data.receiver);
+    if (receiverSocket) {
+      io.to(receiverSocket).emit('private message', {
+        content: data.content,
+        sender: socket.userId
+      });
+    }
+  });
+  
+  socket.on('disconnect', () => {
+    for (const [userId, socketId] of userSockets.entries()) {
+      if (socketId === socket.id) {
+        userSockets.delete(userId);
+        break;
+      }
+    }
+  });
+});
+
+// Add these routes to your Express app
+app.get('/messages/:userId', async (req, res) => {
+  try {
+    const messages = await Message.find({
+      $or: [
+        { sender: req.user._id, receiver: req.params.userId },
+        { sender: req.params.userId, receiver: req.user._id }
+      ]
+    }).sort('createdAt');
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching messages' });
+  }
+});
+
+app.post('/messages', async (req, res) => {
+  try {
+    const message = new Message({
+      sender: req.user._id,
+      receiver: req.body.receiver,
+      content: req.body.content
+    });
+    await message.save();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error saving message' });
+  }
+});
+
+app.get("/login", (req, res) => {
+  res.render("login");
+});
 
 app.get('/messages/:userId/:otherUserId', async (req, res) => {
   try {
@@ -89,18 +249,107 @@ app.post("/login", async (req, res, next) => {
   })(req, res, next);
 });
 
-app.get("/waste/:id/edit", isLoggedIn, async (req, res) => {
+app.get("/signup", async (req, res) => {
+  res.render("signup");
+});
+
+app.post("/signup", async (req, res) => {
   try {
-    const waste = await Waste.findById(req.params.id);
-    if (!waste || waste.user.toString() !== req.user._id.toString()) {
-      return res.status(403).send("Unauthorized access");
+    const { username, email, name, phone, password, role, adminKey } = req.body;
+
+    if (role === "admin") {
+      if (adminKey === process.env.ADMIN_KEY) {
+        const newAdmin = new Admin({ username, email, name, phone });
+        await Admin.register(newAdmin, password); // `passport-local-mongoose` handles hashing
+
+        passport.authenticate("admin-local")(req, res, () => {
+          res.redirect("/admin");
+        });
+      } else {
+        res.status(401).send("Invalid Admin Key");
+      }
+    } else {
+      const newUser = new User({ username, email, name, phone });
+      await User.register(newUser, password); // `passport-local-mongoose` handles hashing
+
+      passport.authenticate("user-local")(req, res, () => {
+        res.redirect("/index");
+      });
     }
-    res.render("waste/edit", { waste });
-  } catch (error) {
-    res.status(500).send("Error fetching waste data");
+  } catch (err) {
+    console.error("Error signing up:", err);
+    res.redirect("/signup");
   }
 });
 
+app.get("/index", async (req, res) => {
+  try {
+    res.render("index", { user: req.user });
+  } catch (error) {
+    console.error(error);
+    res.render("index", { user: null });
+  }
+});
+
+app.get("/admin", async (req, res) => {
+  res.render("admin");
+});
+
+// Logout route
+app.get("/logout", (req, res, next) => {
+  req.logout((err) => {
+    if (err) {
+      console.error("Error logging out:", err);
+      return next(err);
+    }
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+      }
+      res.redirect("/index");
+    });
+  });
+});
+
+// Error handler middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).send("Internal Server Error");
+});
+
+app.get("/flashcard", isLoggedIn, (req, res) => {
+  res.render("flashcard");
+});
+
+app.get("/waste-classification", isLoggedIn, async (req, res) => {
+  res.render("waste-classification");
+});
+// Form submission route
+app.post("/waste-classification", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) {
+      console.log("No file uploaded");
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // console.log('File received:', req.file);
+
+    // Initialize the file manager with your API key
+    const fileManager = new GoogleAIFileManager(process.env.API_KEY);
+
+    // Upload the file using its path and metadata
+    const uploadResult = await fileManager.uploadFile(req.file.path, {
+      mimeType: req.file.mimetype,
+      displayName: req.file.originalname,
+    });
+
+    // console.log(
+    //   `Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri}`
+    // );
+
+    // Initialize the generative AI client with your API key
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+    // Use the specified model
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Generate content using the uploaded file's URI
@@ -135,6 +384,17 @@ Proper Method for Decomposition: [Your Answer]. Don't give any preambles or expl
   }
 });
 
+app.get("/waste/:id/edit", isLoggedIn, async (req, res) => {
+  try {
+    const waste = await Waste.findById(req.params.id);
+    if (!waste || waste.user.toString() !== req.user._id.toString()) {
+      return res.status(403).send("Unauthorized access");
+    }
+    res.render("waste/edit", { waste });
+  } catch (error) {
+    res.status(500).send("Error fetching waste data");
+  }
+});
 
 app.get("/chatbot", isLoggedIn, (req, res) => {
   res.render("chatbot");
