@@ -101,6 +101,41 @@ app.get("/waste/:id/edit", isLoggedIn, async (req, res) => {
   }
 });
 
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Generate content using the uploaded file's URI
+    const result = await model.generateContent([
+      `Provide the classification of the uploaded image in a properly formatted bullet point list. Use the following structure:
+
+Biodegradable/Non-biodegradable/Hazardous: [Your Answer]
+Type of Waste: [Your Answer]
+Appropriate Bin: [Your Answer]
+Proper Method for Decomposition: [Your Answer]. Don't give any preambles or explanations, just the answers.`,
+      {
+        fileData: {
+          fileUri: uploadResult.file.uri,
+          mimeType: uploadResult.file.mimeType,
+        },
+      },
+    ]);
+
+    // Extract and log the text response
+    const responseText = result.response.text();
+    // console.log(responseText);
+
+    const formattedOutput = formatToBulletPoints(responseText);
+
+    return res.json({
+      message: "File processed successfully",
+      result: formattedOutput,
+    });
+  } catch (error) {
+    console.error("Error processing image:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 app.get("/chatbot", isLoggedIn, (req, res) => {
   res.render("chatbot");
 });
