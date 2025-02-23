@@ -92,48 +92,50 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       
-      <div class="collapse navbar-collapse" style="margin-left: 51px;" id="navbarNav">
-        <!-- Left-side Menu Items -->
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="/waste-classification">
-              <i class="fas fa-camera me-1"></i> Classify
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/chatbot">
-              <i class="fas fa-comments me-1"></i> Chatbot
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/carbon">
-              <i class="fas fa-star me-1"></i> Carbon Footprint
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/pickup-scheduling">
-              <i class="fas fa-truck me-1"></i> Schedule
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/marketplace">
-              <i class="fas fa-store me-1"></i> Market
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/waste-data">
-              <i class="fas fa-chart-bar me-1"></i> Data
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="/flashcard">
-              <i class="fas fa-book me-1"></i> Guide
-            </a>
-          </li>
-        </ul>
+      
         
         <!-- Right-side User Info -->
         <% if (user) { %>
+
+          <div class="collapse navbar-collapse" style="margin-left: 51px;" id="navbarNav">
+            <!-- Left-side Menu Items -->
+            <ul class="navbar-nav me-auto">
+              <li class="nav-item">
+                <a class="nav-link" href="/waste-classification">
+                  <i class="fas fa-camera me-1"></i> Classify
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/chatbot">
+                  <i class="fas fa-comments me-1"></i> Chatbot
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/carbon">
+                  <i class="fas fa-star me-1"></i> Carbon Footprint
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/pickup-scheduling">
+                  <i class="fas fa-truck me-1"></i> Schedule
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/marketplace">
+                  <i class="fas fa-store me-1"></i> Market
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/waste-data">
+                  <i class="fas fa-chart-bar me-1"></i> Data
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/flashcard">
+                  <i class="fas fa-book me-1"></i> Guide
+                </a>
+              </li>
+            </ul>
           <div class="d-flex align-items-center" >
             <span class="text-light me-3">Hi, <%= user.name %></span>
             <span class="badge bg-success me-3">Points: <%= user.points %></span>
