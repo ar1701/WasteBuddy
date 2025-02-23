@@ -3,8 +3,9 @@
 
 ![Logo](WasteBuddy_Logo.jpeg)  
 
-## **Demo:** https://kh-05-2025.onrender.com/
-## **Demo Video:** https://drive.google.com/file/d/10bAl5Ng7DfwOXdwyLoQ3-805p0UscuDk/view?usp=sharing
+### **Demo:** https://kh-05-2025.onrender.com/
+### **Demo Video:** https://drive.google.com/file/d/10bAl5Ng7DfwOXdwyLoQ3-805p0UscuDk/view?usp=sharing
+### **Presentation Link:** https://docs.google.com/presentation/d/1jz8dDT39yt30-W7OZJ8bsgvlqxUeokvD4fHm1mur6L4/edit?usp=sharing
 
 #### Note:-
 This website is deployed on a free service called (Render.com). So It might take 40-50 sec to open for the first time in your pc, but once it opened it will be much faster.
