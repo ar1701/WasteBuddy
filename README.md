@@ -6,7 +6,8 @@
 ## **Demo:** https://kh-05-2025.onrender.com/
 ## **Demo Video:** https://drive.google.com/file/d/1NtC5i-8g-yqWrLYHs7dw-aLTRPeZG2Mm/view?usp=drive_link
 
-
+#### Note:-
+This website is deployed on a free service called (Render.com). So It might take 40-50 sec to open for the first time in your pc, but once it opened it will be much faster.
 
 ## **Overview**  
 ---
